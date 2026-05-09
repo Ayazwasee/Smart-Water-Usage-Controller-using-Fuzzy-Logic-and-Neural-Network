@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HydroSense — Smart Water Controller</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<main class="page">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="topbar-logo">HydroSense</span>
+    <span class="topbar-tag">Fuzzy Logic · Neural Network · Water Intelligence</span>
+  </div>
+
+  <!-- ── HERO ───────────────────────────────────────────────── -->
+  <section class="hero card reveal">
+    <div class="chip"><span class="chip-dot"></span>Live System Active</div>
+    <h1>Smart Water<br>Usage Controller</h1>
+    <p class="lead">
+      A dual-engine decision system that fuses fuzzy logic with a trained neural network
+      to convert real-time usage and availability into clear, actionable water-conservation recommendations.
+    </p>
+    <div class="hero-actions">
+      <button class="btn primary" data-scroll="controller">Launch Controller</button>
+      <button class="btn secondary" data-scroll="guide">How it works</button>
+    </div>
+    <div class="hero-grid">
+      <div class="inner-card">
+        <h3>Why conservation matters</h3>
+        <p>The system reduces unnecessary flow when supply is low, guiding users toward balanced, sustainable water consumption.</p>
+      </div>
+      <div class="inner-card">
+        <h3>Dual-engine reasoning</h3>
+        <p>Fuzzy logic applies human-readable rules. The neural network learns patterns from data. Both engines vote — the safer recommendation wins.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW TO USE ──────────────────────────────────────────── -->
+  <section id="guide" class="card section reveal">
+    <div class="section-label">Guide</div>
+    <h2>How to use the system</h2>
+    <div class="guide-grid">
+      <div class="inner-card">
+        <div class="step-num">1</div>
+        <h3>Set Water Usage</h3>
+        <p>Drag the usage slider to reflect current water consumption in litres. Lower values indicate lighter use; higher values trigger more cautious recommendations.</p>
+      </div>
+      <div class="inner-card">
+        <div class="step-num">2</div>
+        <h3>Set Availability</h3>
+        <p>Adjust the availability slider to represent the current water reserve as a percentage. A low value signals scarcity; a high value signals abundance.</p>
+      </div>
+      <div class="inner-card">
+        <div class="step-num">3</div>
+        <h3>Read the Output</h3>
+        <p>The system returns a human-readable recommendation — from "Critical conservation mode" to "Normal flow allowed" — with reasoning from each engine.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── INPUT / OUTPUT MEANING ─────────────────────────────── -->
+  <section class="card section reveal">
+    <div class="section-label">Reference</div>
+    <h2>Input and output meaning</h2>
+    <div class="info-grid">
+      <div class="inner-card">
+        <h3>Inputs</h3>
+        <p><strong style="color:var(--text-primary)">Water Usage</strong> — current consumption in litres.<br><br>
+        <strong style="color:var(--text-primary)">Water Availability</strong> — remaining reserve as a percentage (0 = none, 100 = full).</p>
+      </div>
+      <div class="inner-card">
+        <h3>Outputs</h3>
+        <p>Five recommendation tiers from most to least conservative. The system always picks the safer of the two engine outputs to protect against water shortages.</p>
+        <div class="stat-pills" style="margin-top:14px">
+          <span class="stat-pill" style="color:#ff4f6a;border-color:rgba(255,79,106,.3)">Critical</span>
+          <span class="stat-pill" style="color:#ffb347;border-color:rgba(255,179,71,.3)">High</span>
+          <span class="stat-pill" style="color:#ffe082;border-color:rgba(255,224,130,.3)">Balanced</span>
+          <span class="stat-pill" style="color:#1a8fff;border-color:rgba(26,143,255,.3)">Moderate</span>
+          <span class="stat-pill" style="color:#32e8a0;border-color:rgba(50,232,160,.3)">Normal</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DATASET ─────────────────────────────────────────────── -->
+  <section class="card section reveal">
+    <div class="section-label">Neural Network</div>
+    <h2>Dataset &amp; training</h2>
+    <p style="margin-bottom:0;font-size:.88rem;">
+      The neural network is trained on a water-consumption CSV.
+      Required columns: <code>usage_liters</code>, <code>availability_percent</code>,
+      and <code>recommendation_index</code> or <code>recommendation_label</code>.
+    </p>
+    <div class="dataset-grid">
+      <div class="inner-card">
+        <h3>Active training source</h3>
+        <p id="datasetSourceText">{{ dataset_source }}</p>
+        <div class="stat-pills">
+          <span class="stat-pill" id="statSamples"><strong>{{ dataset_samples }}</strong> samples</span>
+          <span class="stat-pill" id="statAccuracy"><strong>{{ dataset_accuracy }}</strong> accuracy</span>
+        </div>
+      </div>
+      <div class="inner-card">
+        <h3>Upload your dataset</h3>
+        <p>Train the neural network with your own labelled CSV file.</p>
+        <input type="file" id="datasetFile" accept=".csv" />
+        <button class="btn secondary" id="uploadBtn" style="width:100%">Train with CSV</button>
+        <p class="status-msg" id="uploadMsg"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONTROLLER ──────────────────────────────────────────── -->
+  <section id="controller" class="card section reveal" style="text-align:center">
+    <div class="section-label">Live Controller</div>
+    <h2>Adjust &amp; Analyze</h2>
+
+    <div class="slider-block" style="margin-top:28px">
+      <div class="slider-header">
+        <span class="slider-label">Water Usage</span>
+        <span><span id="usageValue" class="slider-val">{{ default_usage }}</span><span class="slider-unit">L</span></span>
+      </div>
+      <input type="range" id="usage" min="0" max="150" value="{{ default_usage }}">
+      <p class="slider-desc">Low usage supports water saving. High usage triggers more cautious recommendations.</p>
+    </div>
+
+    <div class="slider-block">
+      <div class="slider-header">
+        <span class="slider-label">Water Availability</span>
+        <span><span id="availabilityValue" class="slider-val">{{ default_availability }}</span><span class="slider-unit">%</span></span>
+      </div>
+      <input type="range" id="availability" min="0" max="100" value="{{ default_availability }}">
+      <p class="slider-desc">Low availability signals scarcity. High availability allows the system to relax restrictions.</p>
+    </div>
+
+    <div class="analyze-wrap">
+      <button class="btn primary analyze-btn" id="analyzeBtn">Analyze conditions</button>
+    </div>
+
+    <!-- Overall Result -->
+    <div class="result-wrap">
+      <div class="result-panel inner-card" id="resultPanel">
+        <div class="result-eyebrow">Overall recommendation</div>
+        <div id="overallLabel">{{ demo_overall }}</div>
+        <p id="overallSummary">{{ demo_summary }}</p>
+        <p id="overallHarmony">{{ demo_harmony }}</p>
+      </div>
+    </div>
+
+    <!-- Engine Detail -->
+    <div class="detail-grid">
+      <div class="inner-card">
+        <span class="engine-tag fuzzy">Fuzzy Logic</span>
+        <div id="fuzzyLabel">{{ demo_fuzzy }}</div>
+        <p id="fuzzyExplanation">The fuzzy engine interprets your inputs using human-like membership rules.</p>
+      </div>
+      <div class="inner-card">
+        <span class="engine-tag nn">Neural Network</span>
+        <div id="nnLabel">{{ demo_nn }}</div>
+        <p id="nnConfidence">Confidence from trained dataset patterns.</p>
+        <div class="conf-bar-wrap"><div class="conf-bar" id="confBar" style="width:50%"></div></div>
+      </div>
+    </div>
+
+    <!-- Micro cards -->
+    <div class="micro-grid">
+      <div class="inner-card">
+        <div class="micro-label">Usage level</div>
+        <div id="usageText">—</div>
+      </div>
+      <div class="inner-card">
+        <div class="micro-label">Availability level</div>
+        <div id="availabilityText">—</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── FOOTER ──────────────────────────────────────────────── -->
+  <section class="card section footer-note reveal">
+    <div class="section-label">Mission</div>
+    <h2>Why this project matters</h2>
+    <p>
+      The goal is not to produce a number — it's to help users understand real water conditions,
+      make better decisions instantly, and build a habit of responsible conservation.
+    </p>
+  </section>
+
+</main>
+
+<script>
+  window.DEFAULTS = {
+    usage: {{ default_usage | tojson }},
+    availability: {{ default_availability | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
